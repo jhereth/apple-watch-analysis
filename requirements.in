@@ -1,0 +1,11 @@
+black
+isort
+jupyter
+jupyterlab_code_formatter
+jupytext
+nbdime  # undeclared dependency of jupytext (?)
+numpy
+pandas
+pip-tools
+scipy
+
