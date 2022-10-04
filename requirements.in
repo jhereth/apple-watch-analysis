@@ -1,11 +1,17 @@
+attrs
+beautifulsoup4
 black
+html5lib
+httpx
 isort
 jupyter
 jupyterlab_code_formatter
 jupytext
+pyrsistent
 nbdime  # undeclared dependency of jupytext (?)
+networkx
 numpy
 pandas
 pip-tools
 scipy
-
+sentence-transformers
