@@ -4,9 +4,11 @@ black
 html5lib
 httpx
 isort
+itables
 jupyter
 jupyterlab_code_formatter
 jupytext
+matplotlib
 pyrsistent
 nbdime  # undeclared dependency of jupytext (?)
 networkx

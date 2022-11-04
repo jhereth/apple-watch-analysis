@@ -10,4 +10,3 @@ VENV = .venv
 dev: .venv/bin/python3 requirements.in
 	${VENV}/bin/pip-compile -v requirements.in
 	${VENV}/bin/pip-sync
-
