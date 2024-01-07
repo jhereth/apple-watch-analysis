@@ -153,6 +153,7 @@ for (w1, w2) in itertools.combinations(watches, 2):
 
 # %%
 import matplotlib
+import matplotlib.pyplot as plt
 import networkx as nx
 
 features = set()
@@ -161,17 +162,36 @@ for w in watches:
 # pprint(features)
 G = nx.DiGraph()
 G.add_nodes_from(features)
+edge_labels = defaultdict(lambda: "")
 for (w1, w2) in itertools.combinations(watches, 2):
     for (s, t) in mappings[(w1, w2)].items():
         # print(w1.name, w2.name, s, t)
-        G.add_edge(w1.features[s], w2.features[t])
+        G.add_edge(*(e:=(w1.features[s], w2.features[t])))
+        # print(e)
+        # edge_labels[e]+=f"-({w1.name[12:]}, {w2.name[12:]})"
+        if e[0] != e[1]:
+            edge_labels[e]+=f"-({w1.name[12:]}, {w2.name[12:]})"
+GC = list(nx.connected_components(G.to_undirected()))
+print(G.number_of_nodes(), G.number_of_edges(), len(list(GC)))
 
-print(G.number_of_nodes(), G.number_of_edges())
-for (i,n) in enumerate(G.nodes()):
-    print(i,n)
-    nx.draw_networkx(G, nodelist = G.nodes[n], edgelist=G.out_edges([n]), font_size=6)
-    if i > 3:
-        break
+# print("edges", nx.get_edge_attributes(G, "weight"))
+# print(edge_labels)
+for (i, component) in enumerate(GC):
+    print(i, component)
+    sG = G.subgraph(component)
+    # print("type", type(sG))
+    # print("edges", sG.edges)
+    pos = nx.spring_layout(sG)
+    # print(pos)
+    plt.figure()
+    nx.draw(sG, pos, with_labels=True, connectionstyle='arc3, rad = 0.1', font_size=6)
+    nx.draw_networkx_edge_labels(sG, pos, edge_labels={e:l for (e,l) in edge_labels.items() if any(n in e for n in component)})
+    # plt.axis_off()
+    # fig.tight_layout()
+    plt.show()
+    if i >= 0:
+        # break
+        pass
 
 
 # %% tags=[]
@@ -181,7 +201,7 @@ class FeatureNode:
     index: int
 
     def name(self):
-        return watch.features[index]
+        return watch.features[self.index]
 
 
 feature_nodes = [
@@ -191,68 +211,52 @@ feature_nodes = [
 ]
 print(len(feature_nodes))
 
-# %%
-import networkx as nx
-
-G = nx.Graph()
-
-# %%
-import torch
-
-argmax_vector = torch.argmax(matrix, dim=1)
-for i in range(len(argmax_vector)):
-    j = argmax_vector[i].item()
-    if (s := matrix[i][j].item()) < 0.999:
-        print(i, j, s, features[first][i], "|", features[second][j])
+# %% [markdown]
+# ## Transitivity
+#
+# The same feature `i` of watch `w1` should be mapped to the same feature `j` of `w3` directly or via feature `k` of watch `w2` (if `i` is mapped to `k`).
 
 # %%
-argmax_vector = torch.argmax(matrix, dim=0)
-for j in range(len(argmax_vector)):
-    i = argmax_vector[j].item()
-    if (s := matrix[i][j].item()) < 0.999:
-        print(i, j, s, features[first][i], "|", features[second][j])
+for (w1, w2, w3) in itertools.combinations(watches, 3):
+    assert w1 < w2 < w3
+    m1, m2, m12 = mappings[w1,w2], mappings[w2,w3], mappings[w1,w3]
+    # print(m1, m2, m12)
+    for i in range(len(w1.features)):
+        # print(m1[i])
+        assert (l:=m2[m1[i]])==(r:=m12[i]), f"({w1.name}, {w2.name}, {w3.name}): {w1.features[i]} maps to {w3.features[l]} and {w3.features[r]}"
+
+
 
 # %%
-print("|", (one := features[first][14]), "|", (two := features[second][13]), "|")
-print(one == two)
+import pandas as pd
+
+i = 0
+
+for w in watches:
+    for c in GC:
+        assert len(c.intersection(w.features)) <= 1
+        # print(c.intersection(w.features))
+        i+=1
+print(f"{i} tests successful")
+
+
+def pop_or_none(s: set):
+    if len(s) >= 1:
+        return s.pop()
+    return None
+
+df = pd.DataFrame(
+    data=[{w.name: pop_or_none(c.intersection(w.features)) for w in watches} for c in GC]
+)
 
 # %%
-import itertools
-
-print(len(key_list))
-pprint(combs := list(itertools.combinations(key_list, 2)))
-print(len(combs))
 
 # %%
-t = torch.Tensor([[1, -7, 3], [8, -15, 6]])
-print(t)
-print(t.size())
 
 # %%
-max(_ for _ in t[0] if _ < 5).item()
+from itables import init_notebook_mode
 
-# %%
-torch.max(t, dim=0)
-
-# %%
-torch.max(t, dim=1)
-
-# %%
-torch.argmax(t, dim=0)
-
-# %%
-torch.argmax(t, dim=1)
-
-# %%
-torch.max(t)
-
-# %%
-torch.argmax(t)
-
-# %%
-a = [2, 1, 3]
-pprint(sorted(a))
-pprint(a.sort())
-pprint(a)
+init_notebook_mode(all_interactive=True)
+df
 
 # %%
